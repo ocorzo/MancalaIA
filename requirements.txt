@@ -1,0 +1,4 @@
+# Runtime for the current NumPy training, evaluation and tournament scripts.
+numpy
+h5py
+matplotlib

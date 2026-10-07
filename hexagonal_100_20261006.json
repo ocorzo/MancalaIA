@@ -1,0 +1,169 @@
+{
+  "games_per_pair": 100,
+  "seed": 20261006,
+  "mcts_simulations": 50,
+  "balanced_roles": true,
+  "pairs": [
+    {
+      "a": "AlphaZero anterior",
+      "b": "AlphaZero nuevo",
+      "wins_a": 0,
+      "wins_b": 75,
+      "draws": 25
+    },
+    {
+      "a": "AlphaZero anterior",
+      "b": "Azar",
+      "wins_a": 97,
+      "wins_b": 0,
+      "draws": 3
+    },
+    {
+      "a": "AlphaZero anterior",
+      "b": "Codigo3",
+      "wins_a": 25,
+      "wins_b": 75,
+      "draws": 0
+    },
+    {
+      "a": "AlphaZero anterior",
+      "b": "Codigo4",
+      "wins_a": 0,
+      "wins_b": 100,
+      "draws": 0
+    },
+    {
+      "a": "AlphaZero anterior",
+      "b": "Codigo5",
+      "wins_a": 25,
+      "wins_b": 75,
+      "draws": 0
+    },
+    {
+      "a": "AlphaZero nuevo",
+      "b": "Azar",
+      "wins_a": 99,
+      "wins_b": 0,
+      "draws": 1
+    },
+    {
+      "a": "AlphaZero nuevo",
+      "b": "Codigo3",
+      "wins_a": 50,
+      "wins_b": 50,
+      "draws": 0
+    },
+    {
+      "a": "AlphaZero nuevo",
+      "b": "Codigo4",
+      "wins_a": 75,
+      "wins_b": 0,
+      "draws": 25
+    },
+    {
+      "a": "AlphaZero nuevo",
+      "b": "Codigo5",
+      "wins_a": 50,
+      "wins_b": 50,
+      "draws": 0
+    },
+    {
+      "a": "Azar",
+      "b": "Codigo3",
+      "wins_a": 1,
+      "wins_b": 99,
+      "draws": 0
+    },
+    {
+      "a": "Azar",
+      "b": "Codigo4",
+      "wins_a": 0,
+      "wins_b": 100,
+      "draws": 0
+    },
+    {
+      "a": "Azar",
+      "b": "Codigo5",
+      "wins_a": 0,
+      "wins_b": 100,
+      "draws": 0
+    },
+    {
+      "a": "Codigo3",
+      "b": "Codigo4",
+      "wins_a": 50,
+      "wins_b": 25,
+      "draws": 25
+    },
+    {
+      "a": "Codigo3",
+      "b": "Codigo5",
+      "wins_a": 25,
+      "wins_b": 75,
+      "draws": 0
+    },
+    {
+      "a": "Codigo4",
+      "b": "Codigo5",
+      "wins_a": 50,
+      "wins_b": 50,
+      "draws": 0
+    }
+  ],
+  "standings": [
+    {
+      "name": "AlphaZero nuevo",
+      "points": 1098,
+      "games": 500,
+      "wins": 349,
+      "draws": 51,
+      "losses": 100,
+      "percent_max": 73.2
+    },
+    {
+      "name": "Codigo5",
+      "points": 1050,
+      "games": 500,
+      "wins": 350,
+      "draws": 0,
+      "losses": 150,
+      "percent_max": 70.0
+    },
+    {
+      "name": "Codigo3",
+      "points": 922,
+      "games": 500,
+      "wins": 299,
+      "draws": 25,
+      "losses": 176,
+      "percent_max": 61.46666666666667
+    },
+    {
+      "name": "Codigo4",
+      "points": 875,
+      "games": 500,
+      "wins": 275,
+      "draws": 50,
+      "losses": 175,
+      "percent_max": 58.333333333333336
+    },
+    {
+      "name": "AlphaZero anterior",
+      "points": 469,
+      "games": 500,
+      "wins": 147,
+      "draws": 28,
+      "losses": 325,
+      "percent_max": 31.266666666666666
+    },
+    {
+      "name": "Azar",
+      "points": 7,
+      "games": 500,
+      "wins": 1,
+      "draws": 4,
+      "losses": 495,
+      "percent_max": 0.4666666666666667
+    }
+  ]
+}

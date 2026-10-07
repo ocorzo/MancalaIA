@@ -1,0 +1,504 @@
+''' Notas de laversión:
+V0_5_para_DQL se implementa que pueda recibir el tipo de jugador para cada uno de los lados y el número de partidas en cada tanda
+V0_5 Se implementa finalización cuando alguno de los jugadores tenga 25 o mas semillas en su mancala y también
+se implementa que se pueda jugar en tandas de "N" juegos
+V0_3a Se implementa el nombre de los jugadores en el nombre del archivo log
+V0_3 Se implementa IA2 entrenada con los resultados del triangular entre Azar Codigo e IA
+V0_2 Se implementa IA en código en la rutina CodigoMove y desactivación de selección de jugador para partidas en tandem comentando lína "Jugador_Sup, Jugador_Inf = selecciona_jugador()"
+V0_1 se implementa selección de jugadores y rutina de juego al azar
+V0, se agrega log de jugadas
+Versión original tomada de https://www.sourcecodester.com/python/16790/simple-mancala-game-python-free-source-code.html#google_vignette'''
+
+import sys, os, random
+from tensorflow.keras.models import load_model
+import numpy as np
+
+# Valores predefinidos
+Jugador_Sup = 'Azar'
+Jugador_Inf = 'Azar'
+partidas = 1
+epsilon = 0
+
+PLAYER_1_PITS = ('A', 'B', 'C', 'D', 'E', 'F')
+PLAYER_2_PITS = ('G', 'H', 'I', 'J', 'K', 'L')
+
+OPPOSITE_PIT = {'A': 'G', 'B': 'H', 'C': 'I', 'D': 'J', 'E': 'K',
+                   'F': 'L', 'G': 'A', 'H': 'B', 'I': 'C', 'J': 'D',
+                   'K': 'E', 'L': 'F'}
+
+NEXT_PIT = {'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E', 'E': 'F', 'F': '1',
+            '1': 'L', 'L': 'K', 'K': 'J', 'J': 'I', 'I': 'H', 'H': 'G',
+            'G': '2', '2': 'A'}
+
+PIT_LABELS = 'ABCDEF1LKJIHG2'
+
+STARTING_NUMBER_OF_SEEDS = 4
+log_directory = "/Volumes/OctubreRojo/Borrar/MancalaLog/"
+
+def selecciona_jugador():
+    Jugador_Sup = ""
+    Jugador_Inf = ""
+    sele_Sup = 0
+    sele_Inf = 0
+    print("Por favor selecciona el tipo de jugador para cada uno de los lados")
+
+    while sele_Inf == 0:
+        try:
+            sele_Inf = int(input("Digite el número que representa al tipo de jugador INFERIOR: 1.- Humano, 2.- Azar, 3.- Código, 4.- IA ó 5.- IA2 "))  # Solicita el tipo de jugador para el lado de a bajor
+            if sele_Inf not in [1, 2, 3, 4, 5]:
+                print("Su selección debe de estar entre 1 y 5")
+                sele_Inf = 0
+        except ValueError:
+            print("Por favor, digite un número válido.")
+
+    if sele_Inf == 1: Jugador_Inf = "Humano"
+    elif sele_Inf == 2: Jugador_Inf = "Azar"
+    elif sele_Inf == 3: Jugador_Inf = "Código"
+    elif sele_Inf == 4: Jugador_Inf = "IA"
+    elif sele_Inf == 5: Jugador_Inf = "IA2"
+
+    while sele_Sup == 0:
+        try:
+            sele_Sup = int(input("Digite el número que representa al tipo de jugador SUPERIOR: 1.- Humano, 2.- Azar, 3.- Código y 4.- IA "))  # Solicita el tipo de jugador para el lado de arriba
+            if sele_Sup not in [1, 2, 3, 4, 5]:
+                print("Su selección debe de estar entre 1 y 5")
+                sele_Sup = 0
+        except ValueError:
+            print("Por favor, digite un número válido.")
+
+    if sele_Sup == 1: Jugador_Sup = "Humano"
+    elif sele_Sup == 2: Jugador_Sup = "Azar"
+    elif sele_Sup == 3: Jugador_Sup = "Código"
+    elif sele_Sup == 4: Jugador_Sup = "IA"
+    elif sele_Inf == 5: Jugador_Inf = "IA2"
+
+    return Jugador_Sup, Jugador_Inf
+
+# Jugador_Sup, Jugador_Inf = selecciona_jugador()
+hay_humano = True if Jugador_Sup == "Humano" or Jugador_Inf == "Humano" else False
+if hay_humano: print('''======== Mancala Game ========\n\n\n''')
+
+def main():
+    global log_filename
+    log_filename = crearArchivoLog()
+    gameBoard = getNewBoard()
+    playerTurn = '1'
+
+    while True:
+        if hay_humano:
+            print('\n')
+            print("###################################################################")
+            print('\n')
+
+        displayBoard(gameBoard)
+
+        # Seleccionar la función de movimiento adecuada
+        move_function = select_move_function(playerTurn, Jugador_Inf, Jugador_Sup)
+
+        # Obtener el movimiento del jugador usando la función seleccionada
+        playerMove = move_function(playerTurn, gameBoard)
+
+        # Registrar el movimiento en el archivo de texto
+        log_move(gameBoard, playerTurn, playerMove)
+
+        # Retrazo para no saturar el CPU
+        #time.sleep(.005)
+
+        playerTurn = makeMove(gameBoard, playerTurn, playerMove)
+
+        winner = checkForWinner(gameBoard)
+        if winner == '1' or winner == '2':
+            displayBoard(gameBoard)
+            print('Player ' + winner + ' has won!')
+            update_log_with_winner(winner)
+            renombrar_archivo(log_filename, winner)
+            #sys.exit()
+            break
+        elif winner == 'tie':
+            displayBoard(gameBoard)
+            print('There is a tie!')
+            #sys.exit()
+            break
+    return
+
+def getNewBoard():
+    """Return a dictionary representing a Mancala board in the starting
+    state: 4 seeds in each pit and 0 in the stores."""
+
+    s = STARTING_NUMBER_OF_SEEDS
+
+    return {'1': 0, '2': 0, 'A': s, 'B': s, 'C': s, 'D': s, 'E': s,
+            'F': s, 'G': s, 'H': s, 'I': s, 'J': s, 'K': s, 'L': s}
+
+def displayBoard(board):
+    """Displays the game board as ASCII-art based on the board
+    dictionary."""
+
+    seedAmounts = []
+
+    for pit in 'GHIJKL21ABCDEF':
+        numSeedsInThisPit = str(board[pit]).rjust(2)
+        seedAmounts.append(numSeedsInThisPit)
+
+    if hay_humano: print("""
++------+------+--<<<<<-Player 2----+------+------+------+
+2      |G     |H     |I     |J     |K     |L     |      1
+       |  {}  |  {}  |  {}  |  {}  |  {}  |  {}  |
+S      |      |      |      |      |      |      |      S
+T  {}  +------+------+------+------+------+------+  {}  T
+O      |A     |B     |C     |D     |E     |F     |      O
+R      |  {}  |  {}  |  {}  |  {}  |  {}  |  {}  |      R
+E      |      |      |      |      |      |      |      E
++------+------+------+-Player 1->>>>>-----+------+------+
+
+""".format(*seedAmounts))
+
+def select_move_function(playerTurn, Jugador_Inf, Jugador_Sup):
+    if playerTurn == '1':
+        player_type = Jugador_Inf
+    else:
+        player_type = Jugador_Sup
+
+    numeroAlAzar = random.random()
+    if numeroAlAzar < epsilon:
+        return AzarMove
+
+    if player_type == 'Humano':
+        return askForPlayerMove
+    elif player_type == 'Azar':
+        return AzarMove
+    elif player_type == 'Código':
+        return CodigoMove
+    elif player_type == 'IA':
+        return lambda playerTurn, board: IAmove(playerTurn, board, model)
+    elif player_type == 'IA2':
+        return lambda playerTurn, board: IA2move(playerTurn, board, model2)
+    elif player_type == 'IA3':
+        return lambda playerTurn, board: IA3move(playerTurn, board, model3)
+    else:
+        raise ValueError("Tipo de jugador no reconocido")
+
+def askForPlayerMove(playerTurn, board):
+    """Asks the player which pit on their side of the board they
+    select to sow seeds from. Returns the uppercase letter label of the
+    selected pit as a string."""
+
+    while True:
+
+        if playerTurn == '1':
+            print('Player 1, choose move: A-F (or QUIT)')
+        elif playerTurn == '2':
+            print('Player 2, choose move: G-L (or QUIT)')
+        response = input('> ').upper().strip()
+
+        if response == 'QUIT':
+            print('Thanks for playing!')
+            sys.exit()
+
+        if (playerTurn == '1' and response not in PLAYER_1_PITS) or (
+            playerTurn == '2' and response not in PLAYER_2_PITS
+        ):
+            print('Please pick a letter on your side of the board.')
+            continue
+        if board.get(response) == 0:
+            print('Please pick a non-empty pit.')
+            continue
+        return response
+
+# Selección del tiro de forma aleatoria
+def AzarMove(playerTurn, board):
+    if playerTurn == '1':
+        pits = [pit for pit in PLAYER_1_PITS if board[pit] > 0]
+    elif playerTurn == '2':
+        pits = [pit for pit in PLAYER_2_PITS if board[pit] > 0]
+
+    if pits:
+        return random.choice(pits)
+    else:
+        return None  # Si no hay movimientos posibles
+
+# Selección del tiro con una inteligencia en código
+def CodigoMove(playerTurn, board):
+    best_move = AzarMove(playerTurn, board)
+    max_mancala_seeds = -1
+
+    if playerTurn == '1':
+        player_pits = PLAYER_1_PITS
+        player_mancala = '1'
+        opponent_pits = PLAYER_2_PITS
+        opponent_mancala = '2'
+    else:
+        player_pits = PLAYER_2_PITS
+        player_mancala = '2'
+        opponent_pits = PLAYER_1_PITS
+        opponent_mancala = '1'
+
+    for pit in player_pits:
+        if board[pit] > 0:
+            simulated_board = board.copy()
+            player_seeds = simulate_move(simulated_board, playerTurn, pit)
+
+            opponent_best_move, opponent_seeds = find_best_opponent_move(simulated_board, playerTurn)
+
+            net_seeds = player_seeds - opponent_seeds
+            if net_seeds > max_mancala_seeds:
+                max_mancala_seeds = net_seeds
+                best_move = pit
+
+    return best_move
+
+# Cargar el modelo entrenado para IA
+def load_trained_model():
+    model = load_model('/home/ocorzo/Mancala/modelo_mancala.h5')
+    return model
+
+# Cargar el modelo entrenado para IA2
+def load_trained_model_IA2():
+    model2 = load_model('/Users/ocorzo/Codigo/Mancala/onLineModel.keras')
+    return model2
+
+# Cargar el modelo entrenado para IA3
+def load_trained_model_IA3():
+    model3 = load_model('/Users/ocorzo/Codigo/Mancala/targetModel.keras')
+    return model3
+
+
+hay_IA = True if Jugador_Sup == "IA" or Jugador_Inf == "IA" else False
+# Cargar el modelo entrenado para IA
+if hay_IA: model = load_trained_model()
+
+hay_IA2 = True if Jugador_Sup == "IA2" or Jugador_Inf == "IA2" else False
+# Cargar el modelo entrenado para IA2
+if True: model2 = load_trained_model_IA2()
+
+hay_IA3 = True if Jugador_Sup == "IA3" or Jugador_Inf == "IA3" else False
+# Cargar el modelo entrenado para IA3
+if True: model3 = load_trained_model_IA3()
+
+import numpy as np
+from tensorflow.keras.models import load_model
+
+# Función para que la IA utilice el modelo y haga predicciones
+def IAmove(playerTurn, board, model):
+    # Asegurarnos de que todos los hoyos, mancalas y playerTurn están incluidos
+    playerTurn_value = int(playerTurn)  # Convertir playerTurn a valor numérico 1 o 2
+    X = [playerTurn_value] + [board[pit] for pit in PIT_LABELS]
+    X = np.array([X])  # Convertir a matriz numpy y ajustar la dimensión
+
+    # Predecir las probabilidades de cada posible movimiento
+    y_prob = model.predict(X)[0]
+    #print('Model_1')
+    conversion_table = 'ABCDEFGHIJKL'
+
+    # Ordenar los movimientos por probabilidad descendente
+    y_sorted_indices = np.argsort(y_prob)[::-1]
+
+    # Buscar el primer movimiento válido
+    for idx in y_sorted_indices:
+        move = conversion_table[idx]
+        if (playerTurn == '1' and move in PLAYER_1_PITS and board[move] > 0) or (playerTurn == '2' and move in PLAYER_2_PITS and board[move] > 0):
+            return move
+
+    # Si no se encuentra un movimiento válido (no debería ocurrir), devolver None
+    return None
+
+# Función para que la IA2 utilice el modelo y haga predicciones
+def IA2move(playerTurn, board, model2):
+    # Asegurarnos de que todos los hoyos, mancalas y playerTurn están incluidos
+    playerTurn_value = int(playerTurn)  # Convertir playerTurn a valor numérico 1 o 2
+    X = [playerTurn_value] + [board[pit] for pit in PIT_LABELS]
+    X = np.array([X])  # Convertir a matriz numpy y ajustar la dimensión
+
+    # Predecir las probabilidades de cada posible movimiento
+    y_prob = model2.predict(X, verbose=1)[0]
+    #print('Model_2')
+    conversion_table = 'ABCDEFGHIJKL'
+
+    # Ordenar los movimientos por probabilidad descendente
+    y_sorted_indices = np.argsort(y_prob)[::-1]
+
+    # Buscar el primer movimiento válido
+    for idx in y_sorted_indices:
+        move = conversion_table[idx]
+        if (playerTurn == '1' and move in PLAYER_1_PITS and board[move] > 0) or (playerTurn == '2' and move in PLAYER_2_PITS and board[move] > 0):
+            return move
+
+    # Si no se encuentra un movimiento válido (no debería ocurrir), devolver None
+    return None
+
+# Función para que la IA3 utilice el modelo y haga predicciones
+def IA3move(playerTurn, board, model3):
+    # Asegurarnos de que todos los hoyos, mancalas y playerTurn están incluidos
+    playerTurn_value = int(playerTurn)  # Convertir playerTurn a valor numérico 1 o 2
+    X = [playerTurn_value] + [board[pit] for pit in PIT_LABELS]
+    X = np.array([X])  # Convertir a matriz numpy y ajustar la dimensión
+
+    # Predecir las probabilidades de cada posible movimiento
+    y_prob = model3.predict(X, verbose=0)[0]
+    #print('Model_3')
+    conversion_table = 'ABCDEFGHIJKL'
+
+    # Ordenar los movimientos por probabilidad descendente
+    y_sorted_indices = np.argsort(y_prob)[::-1]
+
+    # Buscar el primer movimiento válido
+    for idx in y_sorted_indices:
+        move = conversion_table[idx]
+        if (playerTurn == '1' and move in PLAYER_1_PITS and board[move] > 0) or (playerTurn == '2' and move in PLAYER_2_PITS and board[move] > 0):
+            return move
+
+    # Si no se encuentra un movimiento válido (no debería ocurrir), devolver None
+    return None
+
+def simulate_move(board, playerTurn, pit):
+    seedsToSow = board[pit]
+    board[pit] = 0
+    player_mancala = '1' if playerTurn == '1' else '2'
+
+    while seedsToSow > 0:
+        pit = NEXT_PIT[pit]
+        if (playerTurn == '1' and pit == '2') or (playerTurn == '2' and pit == '1'):
+            continue
+        board[pit] += 1
+        seedsToSow -= 1
+
+    return board[player_mancala]
+
+def find_best_opponent_move(board, current_player):
+    opponent = '2' if current_player == '1' else '1'
+    best_move = None
+    max_mancala_seeds = -1
+
+    if opponent == '1':
+        player_pits = PLAYER_1_PITS
+        player_mancala = '1'
+    else:
+        player_pits = PLAYER_2_PITS
+        player_mancala = '2'
+
+    for pit in player_pits:
+        if board[pit] > 0:
+            simulated_board = board.copy()
+            mancala_seeds = simulate_move(simulated_board, opponent, pit)
+            if mancala_seeds > max_mancala_seeds:
+                max_mancala_seeds = mancala_seeds
+                best_move = pit
+
+    return best_move, max_mancala_seeds
+
+def makeMove(board, playerTurn, pit):
+    """Modify the board data structure so that the player 1 or 2 in
+    turn selected pit as their pit to sow seeds from. Returns either
+    '1' or '2' for whose turn it is next."""
+
+    seedsToSow = board[pit]
+    board[pit] = 0
+
+    while seedsToSow > 0:
+        pit = NEXT_PIT[pit]
+        if (playerTurn == '1' and pit == '2') or (
+            playerTurn == '2' and pit == '1'
+        ):
+            continue
+        board[pit] += 1
+        seedsToSow -= 1
+
+    if (pit == playerTurn == '1') or (pit == playerTurn == '2'):
+
+        return playerTurn
+
+    if playerTurn == '1' and pit in PLAYER_1_PITS and board[pit] == 1:
+        oppositePit = OPPOSITE_PIT[pit]
+        board['1'] += board[oppositePit]
+        board[oppositePit] = 0
+    elif playerTurn == '2' and pit in PLAYER_2_PITS and board[pit] == 1:
+        oppositePit = OPPOSITE_PIT[pit]
+        board['2'] += board[oppositePit]
+        board[oppositePit] = 0
+
+    if playerTurn == '1':
+        return '2'
+    elif playerTurn == '2':
+        return '1'
+
+def checkForWinner(board):
+
+    player1Total = board['A'] + board['B'] + board['C']
+    player1Total += board['D'] + board['E'] + board['F']
+    player2Total = board['G'] + board['H'] + board['I']
+    player2Total += board['J'] + board['K'] + board['L']
+
+    if player1Total == 0:
+        board['2'] += player2Total
+        for pit in PLAYER_2_PITS:
+            board[pit] = 0
+    elif player2Total == 0:
+        board['1'] += player1Total
+        for pit in PLAYER_1_PITS:
+            board[pit] = 0
+    elif board['1'] >= 25:
+        return '1'
+    elif board['2'] >= 25:
+        return '2'
+    else:
+        return 'no winner'
+
+    if board['1'] > board['2']:
+        return '1'
+    elif board['2'] > board['1']:
+        return '2'
+    else:
+        return 'tie'
+
+# Directorio específico para guardar los archivos de log
+os.makedirs(log_directory, exist_ok=True) # NUEVO: Crea el directorio si no existe
+
+# Inicializar el archivo de log
+def crearArchivoLog():
+    codigo_aleatorio = ''.join([str(random.randint(0, 9)) for _ in range(8)])
+    log_filename = os.path.join(log_directory, f"log_juego_{Jugador_Inf}_{Jugador_Sup}_{codigo_aleatorio}.txt")
+    return log_filename
+
+def log_move(board, player, pit):
+    with open(log_filename, 'a+') as f:
+        board_state = ','.join(str(board[p]) for p in PIT_LABELS)
+        f.write(f"{player},{board_state},{pit}\n")
+
+def update_log_with_winner(winner):
+    with open(log_filename, 'r') as f:
+        lines = f.readlines()
+
+    with open(log_filename, 'w') as f:
+        for line in lines:
+            player = line.split(',')[0]
+            if player == winner:
+                f.write(line.strip() + ',winner\n')
+            else:
+                f.write(line.strip() + ',loser\n')
+    f.close()
+
+def renombrar_archivo(log_filename, ganador):
+    # Separar el nombre del archivo y la extensión
+    nombre, extension = os.path.splitext(log_filename)
+
+    # Crear el nuevo nombre del archivo agregando el texto adicional
+    nuevo_nombre = f"{nombre}_{ganador}{extension}"
+
+    # Renombrar el archivo
+    os.rename(log_filename, nuevo_nombre)
+
+def correEnBatch(Jugador_Inf_val, Jugador_Sup_val, partidas, epsilon_val):
+    global Jugador_Sup, Jugador_Inf, epsilon
+    Jugador_Sup = Jugador_Sup_val
+    Jugador_Inf = Jugador_Inf_val
+    epsilon = epsilon_val
+    for i in range(int(partidas)):
+        main()
+        venv_path = sys.prefix
+        print(f"Partida {i+1} finalizada, en venv {venv_path}")
+
+if __name__ == '__main__':
+    correEnBatch(sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]))
+    #for i in range(partidas):
+        #main()
+        #print(f"Partida {i+1} finalizada")

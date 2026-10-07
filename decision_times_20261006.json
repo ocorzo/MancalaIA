@@ -1,0 +1,111 @@
+{
+  "protocol": {
+    "games_per_pair": 40,
+    "total_games": 320,
+    "shared_positions": 200,
+    "unique_positions": 2736,
+    "repeats": 3,
+    "mcts_simulations": 50,
+    "seed": 20261006
+  },
+  "matches": {
+    "AlphaZero_anterior": {
+      "decisions": 2322,
+      "mean_ms": 4.0001044711255185,
+      "median_ms": 4.4361985001160065,
+      "p95_ms": 5.010408400721644,
+      "cpu_mean_ms": 3.997874628768302,
+      "total_seconds": 9.288242581953455
+    },
+    "AlphaZero_nuevo": {
+      "decisions": 2957,
+      "mean_ms": 3.906461141348646,
+      "median_ms": 4.556691001198487,
+      "p95_ms": 5.226051800127607,
+      "cpu_mean_ms": 3.9043625847142156,
+      "total_seconds": 11.551405594967946
+    },
+    "Azar": {
+      "decisions": 969,
+      "mean_ms": 0.003929524245529322,
+      "median_ms": 0.003917999492841773,
+      "p95_ms": 0.00449499966634903,
+      "cpu_mean_ms": 0.0030261816305253474,
+      "total_seconds": 0.003807708993917913
+    },
+    "Codigo3": {
+      "decisions": 1340,
+      "mean_ms": 0.4908983201763042,
+      "median_ms": 0.5029880003348808,
+      "p95_ms": 0.8221895502174448,
+      "cpu_mean_ms": 0.4897094029850657,
+      "total_seconds": 0.6578037490362476
+    },
+    "Codigo4": {
+      "decisions": 1590,
+      "mean_ms": 1.6711618911747494,
+      "median_ms": 1.5648939997845446,
+      "p95_ms": 3.6457630505537963,
+      "cpu_mean_ms": 1.669783625786203,
+      "total_seconds": 2.6571474069678516
+    },
+    "Codigo5": {
+      "decisions": 1370,
+      "mean_ms": 9.35517908031209,
+      "median_ms": 9.233330500137527,
+      "p95_ms": 19.27433320088312,
+      "cpu_mean_ms": 9.352672925547429,
+      "total_seconds": 12.816595340027561
+    }
+  },
+  "shared_positions": {
+    "AlphaZero_anterior": {
+      "decisions": 600,
+      "mean_ms": 3.7445531966022827,
+      "median_ms": 4.406737999488541,
+      "p95_ms": 4.97131609872667,
+      "cpu_mean_ms": 3.7424165516667895,
+      "total_seconds": 2.2467319179613696
+    },
+    "AlphaZero_nuevo": {
+      "decisions": 600,
+      "mean_ms": 3.781610198348062,
+      "median_ms": 4.473809499359049,
+      "p95_ms": 5.132092100302543,
+      "cpu_mean_ms": 3.77935455833331,
+      "total_seconds": 2.2689661190088373
+    },
+    "Azar": {
+      "decisions": 600,
+      "mean_ms": 0.003959126682578547,
+      "median_ms": 0.0038580001273658127,
+      "p95_ms": 0.004739498672279296,
+      "cpu_mean_ms": 0.003089436666646369,
+      "total_seconds": 0.0023754760095471283
+    },
+    "Codigo3": {
+      "decisions": 600,
+      "mean_ms": 0.39774683331719035,
+      "median_ms": 0.40545800038671587,
+      "p95_ms": 0.7348417503635573,
+      "cpu_mean_ms": 0.3966380100000914,
+      "total_seconds": 0.23864809999031422
+    },
+    "Codigo4": {
+      "decisions": 600,
+      "mean_ms": 1.686124436700993,
+      "median_ms": 1.621010000235401,
+      "p95_ms": 3.547349751261208,
+      "cpu_mean_ms": 1.6847313216666155,
+      "total_seconds": 1.0116746620205959
+    },
+    "Codigo5": {
+      "decisions": 600,
+      "mean_ms": 7.198558483287343,
+      "median_ms": 6.5196149989787955,
+      "p95_ms": 15.752328099642869,
+      "cpu_mean_ms": 7.196347663333414,
+      "total_seconds": 4.319135089972406
+    }
+  }
+}
